@@ -9,4 +9,4 @@ async function bootstrap() {
   await prisma.onModuleInit();
   await app.listen(process.env.PORT ?? 3000);
 }
-bootstrap();
+void bootstrap();
