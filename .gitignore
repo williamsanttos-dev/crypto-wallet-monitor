@@ -140,5 +140,5 @@ vite.config.ts.timestamp-*
 
 # personal
 notes/
-/generated/prisma
+generated/
 .vscode
