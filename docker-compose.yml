@@ -1,0 +1,15 @@
+services:
+  pg:
+    image: postgres:17-alpine3.21
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dev
+    volumes:
+      - db_dev:/var/lib/postgresql/data
+
+volumes:
+  db_dev:
+    driver: local
