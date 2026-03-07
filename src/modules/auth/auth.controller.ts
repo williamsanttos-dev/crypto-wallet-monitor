@@ -1,5 +1,6 @@
 import { Body, Controller, Inject, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { ApiConflictResponse, ApiCreatedResponse } from '@nestjs/swagger';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import type { IAuthService } from './interfaces/auth.service.interface';
@@ -15,6 +16,12 @@ export class AuthController {
   @Public()
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('register')
+  @ApiCreatedResponse({
+    description: 'The user has been successfully created',
+  })
+  @ApiConflictResponse({
+    description: 'Conflict',
+  })
   async register(
     // ValidationPipe in main.ts
     // eslint-disable-next-line nestjs-security/no-missing-validation-pipe
