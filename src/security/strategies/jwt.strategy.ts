@@ -8,6 +8,11 @@ type JwtPayload = {
   sub?: string | undefined;
 };
 
+interface AuthCookies {
+  access_token?: string;
+  refresh_token?: string;
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
@@ -15,9 +20,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       // Headers have size limit (cookies)
       // eslint-disable-next-line secure-coding/no-unlimited-resource-allocation
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (req: Request): string | null => req.cookies.access_token ?? null,
+        (req: Request): string | null => {
+          const cookies = req.cookies as AuthCookies;
+          return cookies.access_token ?? null;
+        },
       ]),
-      secretOrKey: process.env.JWT_SECRET, // string don't be undefined
+      secretOrKey: process.env.SECRET_ACCESS_TOKEN,
     };
 
     super(options);
