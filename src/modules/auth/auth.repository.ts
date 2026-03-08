@@ -4,6 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import {
   createPayload,
   IAuthRepository,
+  UserAuth,
 } from './interfaces/auth.repository.interface';
 
 @Injectable()
@@ -26,6 +27,18 @@ export class PrismaRepository implements IAuthRepository {
   async create(data: createPayload): Promise<void> {
     await this.prisma.user.create({
       data: data,
+    });
+  }
+
+  async findUserByEmail(email: string): Promise<UserAuth | null> {
+    return await this.prisma.user.findFirst({
+      where: {
+        email: email,
+      },
+      select: {
+        id: true,
+        passwordHash: true,
+      },
     });
   }
 }
