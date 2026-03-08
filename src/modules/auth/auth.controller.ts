@@ -4,7 +4,11 @@
 
 import { Body, Controller, Inject, Post, Res } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { ApiConflictResponse, ApiCreatedResponse } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiCreatedResponse,
+} from '@nestjs/swagger';
 import type { Response } from 'express';
 
 import { CreateUserDto } from './dto/create-user.dto';
@@ -35,6 +39,12 @@ export class AuthController {
   @Public()
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
+  @ApiCreatedResponse({
+    description: 'Login Successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid Credentials',
+  })
   async login(
     @Body() data: LoginDto,
     @Res({ passthrough: true }) response: Response,
