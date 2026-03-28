@@ -16,9 +16,14 @@ datasource db {
 
 model User {
   id String @id @unique @default(uuid())
+
   email String @unique 
   username String @unique @db.VarChar(100)
+
+  role Role @default(USER)
+
   passwordHash String @map("password_hash")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -45,4 +50,9 @@ model RefreshToken {
   replacedByToken String? @map("replaced_by_token") 
 
   @@map("refresh_tokens")
+}
+
+enum Role {
+  USER
+  ADMIN
 }

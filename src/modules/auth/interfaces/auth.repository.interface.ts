@@ -1,4 +1,5 @@
 import type { Prisma } from 'generated/prisma/client';
+import { Role } from 'src/enums/role.enum';
 
 export type registerUserPayload = {
   email: string;
@@ -9,6 +10,7 @@ export type registerUserPayload = {
 export type UserAuth = {
   id: string;
   passwordHash: string;
+  role: Role;
 };
 
 export type TokenNotRevokedPayload = {
