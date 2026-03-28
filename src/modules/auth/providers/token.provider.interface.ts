@@ -1,5 +1,8 @@
+import { Role } from 'src/enums/role.enum';
+
 export type JwtPayload = {
   sub: string;
+  role: Role;
 };
 
 export interface ITokenProvider {

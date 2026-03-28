@@ -29,6 +29,8 @@ import { LoginDto } from './dto/login.dto';
 import { AuthCookies } from 'src/security/strategies/jwt.strategy';
 import { EXPIRE_ACCESS, EXPIRE_REFRESH } from './const/expire-tokens';
 import { CurrentUser } from 'src/security/decorators/current-user.decorator';
+import { Roles } from 'src/security/decorators/roles.decorator';
+import { Role } from 'src/enums/role.enum';
 
 @Controller('auth')
 export class AuthController {
@@ -127,6 +129,7 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @Post('logout')
+  @Roles(Role.ADMIN, Role.USER)
   @ApiCreatedResponse({
     description: 'Logout successfully',
   })

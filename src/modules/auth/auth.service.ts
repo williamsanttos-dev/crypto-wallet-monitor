@@ -66,8 +66,8 @@ export class AuthService implements IAuthService {
         throw new BadRequestException('Invalid credentials');
 
       const [accessToken, refreshToken] = [
-        this.tokenProvider.sign({ sub: user.id }, 'access'),
-        this.tokenProvider.sign({ sub: user.id }, 'refresh'),
+        this.tokenProvider.sign({ sub: user.id, role: user.role }, 'access'),
+        this.tokenProvider.sign({ sub: user.id, role: user.role }, 'refresh'),
       ];
 
       const refreshTokenHash = await this.hashProvider.hash(refreshToken);
@@ -102,11 +102,11 @@ export class AuthService implements IAuthService {
       }
 
       const newAccessToken = this.tokenProvider.sign(
-        { sub: payload.sub },
+        { sub: payload.sub, role: payload.role },
         'access',
       );
       const newRefreshToken = this.tokenProvider.sign(
-        { sub: payload.sub },
+        { sub: payload.sub, role: payload.role },
         'refresh',
       );
 

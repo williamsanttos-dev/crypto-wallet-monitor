@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from 'generated/prisma/client';
 
+import type { Prisma } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
   registerUserPayload,
@@ -9,6 +9,7 @@ import {
   UserAuth,
 } from './interfaces/auth.repository.interface';
 import { EXPIRE_REFRESH } from './const/expire-tokens';
+import { toRole } from 'src/helpers/to-role';
 
 @Injectable()
 export class PrismaRepository implements IAuthRepository {
@@ -39,15 +40,24 @@ export class PrismaRepository implements IAuthRepository {
   ): Promise<UserAuth | null> {
     const client = tx ?? this.prisma;
 
-    return await client.user.findFirst({
+    const user = await client.user.findFirst({
       where: {
         email: email,
       },
       select: {
         id: true,
         passwordHash: true,
+        role: true,
       },
     });
+
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      passwordHash: user.passwordHash,
+      role: toRole(user.role),
+    };
   }
 
   async findTokenNotRevokedByUserId(
