@@ -8,7 +8,7 @@ type JwtPayload = {
   sub?: string | undefined;
 };
 
-interface AuthCookies {
+export interface AuthCookies {
   access_token?: string;
   refresh_token?: string;
 }
