@@ -18,6 +18,10 @@ import {
   ApiBadRequestResponse,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiCookieAuth,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Response, Request } from 'express';
@@ -32,6 +36,7 @@ import { CurrentUser } from 'src/security/decorators/current-user.decorator';
 import { Roles } from 'src/security/decorators/roles.decorator';
 import { Role } from 'src/enums/role.enum';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -42,11 +47,15 @@ export class AuthController {
   @Public()
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('register')
+  @ApiOperation({
+    summary: 'Register a new user',
+    description: 'Creates a new user account.',
+  })
   @ApiCreatedResponse({
-    description: 'The user has been successfully created',
+    description: 'The user has been successfully created.',
   })
   @ApiConflictResponse({
-    description: 'Conflict',
+    description: 'A user with the same email or username already exists.',
   })
   async register(@Body() data: CreateUserDto) {
     return await this.service.register(data);
@@ -56,11 +65,17 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiCreatedResponse({
-    description: 'Login Successfully',
+  @ApiOperation({
+    summary: 'Authenticate a user',
+    description:
+      'Authenticates the user and sets the access and refresh tokens in HTTP-only cookies.',
+  })
+  @ApiOkResponse({
+    description:
+      'Login completed successfully and authentication cookies were set.',
   })
   @ApiBadRequestResponse({
-    description: 'Invalid Credentials',
+    description: 'Invalid credentials.',
   })
   async login(
     @Body() data: LoginDto,
@@ -89,11 +104,21 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
-  @ApiCreatedResponse({
-    description: 'Renewed tokens',
+  @ApiOperation({
+    summary: 'Refresh authentication tokens',
+    description:
+      'Reads the refresh token from cookies, issues new tokens, and replaces the authentication cookies.',
+  })
+  @ApiCookieAuth('refresh_token')
+  @ApiOkResponse({
+    description:
+      'Tokens were refreshed successfully and new authentication cookies were set.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid refresh token.',
   })
   @ApiUnauthorizedResponse({
-    description: 'Token not found',
+    description: 'Refresh token cookie not found.',
   })
   async refresh(
     @Req() request: Request,
@@ -130,8 +155,18 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('logout')
   @Roles(Role.ADMIN, Role.USER)
-  @ApiCreatedResponse({
-    description: 'Logout successfully',
+  @ApiOperation({
+    summary: 'Logout the current user',
+    description:
+      'Invalidates the current refresh token and clears the authentication cookies.',
+  })
+  @ApiCookieAuth('access_token')
+  @ApiOkResponse({
+    description:
+      'Logout completed successfully and authentication cookies were cleared.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized.',
   })
   async logout(
     @CurrentUser() user: { userId?: string } | undefined,

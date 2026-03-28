@@ -13,8 +13,15 @@ import {
   Query,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
 import type { IUsersService } from './interfaces/users.service.interface';
+import { UserEntity } from './entities/user.entity';
 import { Roles } from 'src/security/decorators/roles.decorator';
 import { Role } from 'src/enums/role.enum';
 
@@ -28,6 +35,32 @@ export class UsersController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Get()
   @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: 'List users',
+    description: 'Returns a paginated list of users.',
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: Number,
+    example: 0,
+    description: 'Number of users to skip before starting the result set.',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    example: 20,
+    description: 'Maximum number of users returned in the response.',
+  })
+  @ApiOkResponse({
+    description: 'Users returned successfully.',
+    type: UserEntity,
+    isArray: true,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized.',
+  })
   async findAll(
     @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
