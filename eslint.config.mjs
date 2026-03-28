@@ -49,10 +49,11 @@ export default [
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
       'node-security/lock-file': 'off',
+      'nestjs-security/require-guards': 'warn',
     },
   },
   {
-    files: ['**/*spec.ts'],
+    files: ['**/*.spec.ts'],
     languageOptions: {
       globals: {
         ...globals.jest,

@@ -8,6 +8,7 @@ const unitConfig: Config = {
   rootDir: './',
   moduleNameMapper: {
     '^src/(.*)$': '<rootDir>/src/$1',
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   testMatch: ['<rootDir>/src/**/*.spec.ts'],
   transform: {
