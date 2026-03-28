@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, StrategyOptions } from 'passport-jwt';
-import { Strategy } from 'passport-local';
+import { ExtractJwt, StrategyOptions, Strategy } from 'passport-jwt';
 import { Request } from 'express';
 
 type JwtPayload = {
@@ -14,7 +13,7 @@ export interface AuthCookies {
 }
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor() {
     const options: StrategyOptions = {
       // Headers have size limit (cookies)
