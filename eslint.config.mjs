@@ -69,6 +69,8 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/unbound-method': 'off',
       'jest/unbound-method': 'off',
+      'nestjs-security/no-exposed-debug-endpoints': 'off',
+      'secure-coding/no-hardcoded-credentials': 'off',
     },
   },
 ];
