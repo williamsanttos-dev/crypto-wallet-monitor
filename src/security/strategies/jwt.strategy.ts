@@ -3,10 +3,13 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, StrategyOptions, Strategy } from 'passport-jwt';
 import { Request } from 'express';
 
-type JwtPayload = {
-  sub?: string | undefined;
-};
+import { JwtPayload } from 'src/modules/auth/providers/token.provider.interface';
+import { Role } from 'src/enums/role.enum';
 
+export type AuthUser = {
+  userId: string;
+  role: Role;
+};
 export interface AuthCookies {
   access_token?: string;
   refresh_token?: string;
@@ -30,9 +33,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     super(options);
   }
 
-  validate(payload: JwtPayload) {
+  validate(payload: JwtPayload): AuthUser {
     return {
       userId: payload.sub,
+      role: payload.role,
     };
   }
 }
