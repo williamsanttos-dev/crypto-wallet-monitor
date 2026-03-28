@@ -14,9 +14,13 @@ import {
 } from './interfaces/auth.service.interface';
 import type { IAuthRepository } from './interfaces/auth.repository.interface';
 import type { IHashProvider } from './providers/hash.provider.interface';
-import type { ITokenProvider } from './providers/token.provider.interface';
+import type {
+  ITokenProvider,
+  JwtPayload,
+} from './providers/token.provider.interface';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class AuthService implements IAuthService {
@@ -29,6 +33,8 @@ export class AuthService implements IAuthService {
 
     @Inject('TokenProvider')
     private readonly tokenProvider: ITokenProvider,
+
+    private readonly prisma: PrismaService,
   ) {}
 
   async register(data: CreateUserDto): Promise<void> {
@@ -42,7 +48,7 @@ export class AuthService implements IAuthService {
 
     const passwordHash = await this.hashProvider.hash(data.pass);
 
-    await this.repository.create({
+    await this.repository.registerUser({
       email: data.email,
       passwordHash,
       username: data.username,
@@ -50,18 +56,76 @@ export class AuthService implements IAuthService {
   }
 
   async login(data: LoginDto): Promise<TokensPayload> {
-    const result = await this.repository.findUserByEmail(data.email);
+    return await this.prisma.$transaction(async (tx) => {
+      const user = await this.repository.findUserByEmail(data.email, tx);
 
-    if (
-      !result ||
-      !(await this.hashProvider.compare(data.pass, result.passwordHash))
-    )
-      throw new BadRequestException('Invalid credentials');
+      if (
+        !user ||
+        !(await this.hashProvider.compare(data.pass, user.passwordHash))
+      )
+        throw new BadRequestException('Invalid credentials');
 
-    const [accessToken] = [
-      this.tokenProvider.sign({ sub: result.id }, 'access'),
-    ];
+      const [accessToken, refreshToken] = [
+        this.tokenProvider.sign({ sub: user.id }, 'access'),
+        this.tokenProvider.sign({ sub: user.id }, 'refresh'),
+      ];
 
-    return { accessToken };
+      const refreshTokenHash = await this.hashProvider.hash(refreshToken);
+
+      await this.repository.setAllRefreshRevokedByUserId(user.id, tx);
+      await this.repository.createToken(user.id, refreshTokenHash, tx);
+
+      return { accessToken, refreshToken };
+    });
+  }
+  async refresh(refreshToken: string): Promise<TokensPayload> {
+    return this.prisma.$transaction(async (tx) => {
+      const payload = this.tokenProvider.verify<JwtPayload>(
+        refreshToken,
+        'refresh',
+      );
+
+      const actualRefresh = await this.repository.findTokenNotRevokedByUserId(
+        payload.sub,
+        tx,
+      );
+
+      if (
+        !actualRefresh ||
+        actualRefresh.expiresAt < new Date() ||
+        !(await this.hashProvider.compare(
+          refreshToken,
+          actualRefresh.tokenHash,
+        ))
+      ) {
+        throw new BadRequestException('Invalid refresh token');
+      }
+
+      const newAccessToken = this.tokenProvider.sign(
+        { sub: payload.sub },
+        'access',
+      );
+      const newRefreshToken = this.tokenProvider.sign(
+        { sub: payload.sub },
+        'refresh',
+      );
+
+      const refreshHash = await this.hashProvider.hash(newRefreshToken);
+      const newRefreshId = await this.repository.createToken(
+        payload.sub,
+        refreshHash,
+        tx,
+      );
+      await this.repository.revokeRefreshToken(
+        actualRefresh.id,
+        newRefreshId,
+        tx,
+      );
+
+      return {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+      };
+    });
   }
 }
