@@ -128,4 +128,8 @@ export class AuthService implements IAuthService {
       };
     });
   }
+
+  async logout(userId: string): Promise<void> {
+    await this.repository.setAllRefreshRevokedByUserId(userId);
+  }
 }

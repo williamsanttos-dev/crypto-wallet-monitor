@@ -6,9 +6,11 @@ import { AuthService } from './auth.service';
 import { PrismaRepository } from './auth.repository';
 import { BcryptHashProvider } from './providers/hash.provider';
 import { JwtTokenProvider } from './providers/token.provider';
+import { JwtStrategy } from 'src/security/strategies/jwt.strategy';
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule, PassportModule],
   controllers: [AuthController],
   providers: [
     { provide: 'AuthService', useClass: AuthService },
@@ -18,6 +20,7 @@ import { JwtTokenProvider } from './providers/token.provider';
       provide: 'TokenProvider',
       useClass: JwtTokenProvider,
     },
+    JwtStrategy,
   ],
 })
 export class AuthModule {}

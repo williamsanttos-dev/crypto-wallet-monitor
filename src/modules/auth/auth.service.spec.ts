@@ -354,4 +354,17 @@ describe('AuthService', () => {
       );
     });
   });
+
+  describe('logout', () => {
+    it('should revoke all refresh tokens for the current user', async () => {
+      await service.logout('user-id-1');
+
+      expect(mockRepository.setAllRefreshRevokedByUserId).toHaveBeenCalledWith(
+        'user-id-1',
+      );
+      expect(mockRepository.setAllRefreshRevokedByUserId).toHaveBeenCalledTimes(
+        1,
+      );
+    });
+  });
 });

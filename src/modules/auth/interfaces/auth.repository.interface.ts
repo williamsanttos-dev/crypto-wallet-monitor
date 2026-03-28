@@ -43,6 +43,3 @@ export interface IAuthRepository {
     tx?: Prisma.TransactionClient,
   ): Promise<void>;
 }
-
-// setRevokedByUserId
-//

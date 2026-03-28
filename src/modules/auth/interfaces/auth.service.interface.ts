@@ -9,4 +9,5 @@ export interface IAuthService {
   register(data: CreateUserDto): Promise<void>;
   login(data: LoginDto): Promise<TokensPayload>;
   refresh(refreshToken: string): Promise<TokensPayload>;
+  logout(userId: string): Promise<void>;
 }
