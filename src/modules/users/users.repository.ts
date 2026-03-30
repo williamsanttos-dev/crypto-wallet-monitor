@@ -14,8 +14,15 @@ type PrismaErrorWithCode = {
 export class PrismaUserRepository implements IUserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(offset: number, limit: number): Promise<UserEntity[]> {
+  async findAll(
+    offset: number,
+    limit: number,
+    isActive?: boolean,
+  ): Promise<UserEntity[]> {
     const users = await this.prisma.user.findMany({
+      where: {
+        isActive,
+      },
       select: {
         id: true,
         email: true,

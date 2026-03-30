@@ -14,6 +14,7 @@ import {
   Inject,
   Param,
   Patch,
+  ParseBoolPipe,
   ParseIntPipe,
   Query,
 } from '@nestjs/common';
@@ -65,6 +66,13 @@ export class UsersController {
     example: 20,
     description: 'Maximum number of users returned in the response.',
   })
+  @ApiQuery({
+    name: 'isActive',
+    required: false,
+    type: Boolean,
+    example: true,
+    description: 'Filter users by activation status.',
+  })
   @ApiOkResponse({
     description: 'Users returned successfully.',
     type: UserEntity,
@@ -76,8 +84,10 @@ export class UsersController {
   async findAll(
     @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('isActive', new ParseBoolPipe({ optional: true }))
+    isActive?: boolean,
   ) {
-    return await this.usersService.findAll(offset, limit);
+    return await this.usersService.findAll(offset, limit, isActive);
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })

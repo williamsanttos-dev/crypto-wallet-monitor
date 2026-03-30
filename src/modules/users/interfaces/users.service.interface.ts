@@ -3,7 +3,11 @@ import { UpdateUserDto } from '../dto/update-user.dto';
 import { AuthUser } from 'src/security/strategies/jwt.strategy';
 
 export interface IUsersService {
-  findAll(offset: number, limit: number): Promise<UserEntity[]>;
+  findAll(
+    offset: number,
+    limit: number,
+    isActive?: boolean,
+  ): Promise<UserEntity[]>;
   find(authUser: AuthUser, targetUserId: string): Promise<UserEntity>;
   update(
     authUser: AuthUser,

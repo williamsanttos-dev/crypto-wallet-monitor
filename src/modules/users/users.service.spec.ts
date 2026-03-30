@@ -54,7 +54,7 @@ describe('UsersService', () => {
   });
 
   describe('findAll', () => {
-    it('should return all users from repository', async () => {
+    it('should return all users from repository when no activation filter is provided', async () => {
       const offset = 0;
       const limit = 20;
       const users = [
@@ -73,7 +73,40 @@ describe('UsersService', () => {
 
       await expect(service.findAll(offset, limit)).resolves.toEqual(users);
       expect(mockUserRepository.findAll).toHaveBeenCalledTimes(1);
-      expect(mockUserRepository.findAll).toHaveBeenCalledWith(offset, limit);
+      expect(mockUserRepository.findAll).toHaveBeenCalledWith(
+        offset,
+        limit,
+        undefined,
+      );
+    });
+
+    it('should return filtered users from repository when activation filter is provided', async () => {
+      const offset = 0;
+      const limit = 20;
+      const isActive = false;
+      const users = [
+        {
+          id: 'user-id-2',
+          email: 'inactive@email.com',
+          username: 'inactive-user',
+          role: Role.USER,
+          isActive: false,
+          createdAt: new Date('2026-03-01T10:00:00.000Z'),
+          updatedAt: new Date('2026-03-02T10:00:00.000Z'),
+        },
+      ];
+
+      mockUserRepository.findAll.mockResolvedValue(users);
+
+      await expect(service.findAll(offset, limit, isActive)).resolves.toEqual(
+        users,
+      );
+      expect(mockUserRepository.findAll).toHaveBeenCalledTimes(1);
+      expect(mockUserRepository.findAll).toHaveBeenCalledWith(
+        offset,
+        limit,
+        isActive,
+      );
     });
   });
 

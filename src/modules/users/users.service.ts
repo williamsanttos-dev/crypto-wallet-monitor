@@ -24,8 +24,12 @@ export class UsersService implements IUsersService {
     private readonly repository: IUserRepository,
   ) {}
 
-  async findAll(offset: number, limit: number): Promise<UserEntity[]> {
-    return await this.repository.findAll(offset, limit);
+  async findAll(
+    offset: number,
+    limit: number,
+    isActive?: boolean,
+  ): Promise<UserEntity[]> {
+    return await this.repository.findAll(offset, limit, isActive);
   }
 
   async find(authUser: AuthUser, targetUserId: string): Promise<UserEntity> {
