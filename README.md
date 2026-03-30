@@ -1,98 +1,150 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Wallet Monitor Crypto
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## 🔒 AUTH
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+### Navegação
 
-## Description
+- [Visão geral](#visão-geral)
+- [Objetivo do projeto](#objetivo-do-projeto)
+- [Fluxo de autenticação](#fluxo-de-autenticação)
+- [Estratégia de sessão](#estratégia-de-sessão)
+- [Autorização](#autorização)
+- [Decisões de arquitetura](#decisões-de-arquitetura)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### Visão geral
 
-## Project setup
+Este módulo é responsável por autenticar usuários e proteger rotas privadas da aplicação.
 
-```bash
-$ pnpm install
-```
+Após um login bem-sucedido, o servidor emite dois tokens:
 
-## Compile and run the project
+- **Access Token (AT):** token de curta duração usado para autenticar requisições em rotas protegidas
+- **Refresh Token (RT):** token de maior duração usado para renovar a sessão sem exigir novo login
 
-```bash
-# development
-$ pnpm run start
+Quando o **AT** expira, o cliente deve chamar o endpoint de refresh para obter um novo par de tokens.  
+O endpoint de logout é responsável por revogar a sessão ativa do usuário.
 
-# watch mode
-$ pnpm run start:dev
+> Atualmente, este fluxo cobre clientes web, com transporte de credenciais via cookies.
 
-# production mode
-$ pnpm run start:prod
-```
+### Objetivo do projeto
 
-## Run tests
+Este módulo foi desenvolvido para demonstrar uma estratégia de autenticação com foco em:
 
-```bash
-# unit tests
-$ pnpm run test
+- proteção de rotas privadas
+- gerenciamento seguro de sessão
+- renovação controlada de credenciais
+- revogação de sessão via refresh token
+- separação entre autenticação (`401`) e autorização (`403`)
 
-# e2e tests
-$ pnpm run test:e2e
+### Diagramas
 
-# test coverage
-$ pnpm run test:cov
-```
+#### Diagrama de autenticação
 
-## Deployment
+![Diagrama de autenticação](./docs/schema-authentication.png)
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+#### Diagrama de autorização
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+![Diagrama de autorização](./docs/schema-authorization.png)
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
+### Fluxo de autenticação
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+#### Login
 
-## Resources
+- envio de e-mail e senha
+- validação das credenciais
+- geração de **AT** e **RT**
+- armazenamento do refresh token no servidor
+- envio dos tokens ao cliente via cookies
 
-Check out a few resources that may come in handy when working with NestJS:
+#### Acesso a rotas protegidas
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+- uso do **AT** nas rotas privadas
+- validação do JWT em cada requisição
+- retorno de `401` quando o token estiver ausente, inválido ou expirado
 
-## Support
+#### Refresh de sessão
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+- o cliente envia uma requisição para `/refresh`
+- o servidor valida o **RT** recebido
+- o refresh token armazenado é verificado no servidor
+- o token anterior é invalidado
+- um novo par de **AT/RT** é emitido
+- os novos tokens são enviados novamente via cookies
 
-## Stay in touch
+#### Logout
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- o cliente envia uma requisição para `/logout`
+- os refresh tokens da sessão são revogados no servidor
+- os cookies são limpos
+- a sessão é encerrada
 
-## License
+### Estratégia de sessão
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Este projeto utiliza **Refresh Token Rotation**.
+
+A cada requisição de refresh:
+
+- um novo **RT** é emitido
+- o token anterior é invalidado
+- um novo **AT** é gerado
+- a sessão continua sem exigir novo login
+
+Essa estratégia reduz a reutilização de credenciais antigas e aumenta o controle sobre o ciclo de vida da sessão.
+
+### Autorização
+
+Além da autenticação, a API aplica regras de autorização sobre rotas protegidas.
+
+- rotas públicas são marcadas explicitamente com `@Public()`
+- rotas privadas exigem um JWT válido
+- o acesso a recursos pode depender da role do usuário
+- a autorização segue o modelo de **RBAC** (_Role-Based Access Control_)
+
+### Decisões de arquitetura
+
+#### 1️⃣ Uso de access token + refresh token
+
+**Decisão:** separar a credencial usada nas requisições da credencial usada para renovar a sessão.
+
+**Motivação:** o access token possui curta duração para reduzir a janela de abuso caso seja comprometido. Já o refresh token permite renovar a sessão sem exigir que o usuário faça login com frequência.
+
+**Impacto:** essa abordagem equilibra segurança e experiência do usuário, evitando tanto credenciais de longa duração quanto sessões curtas demais.
+
+#### 2️⃣ Persistência de refresh token no servidor
+
+**Decisão:** armazenar o refresh token no servidor.
+
+**Motivação:** isso permite tratar a sessão como uma entidade controlável, e não apenas como uma credencial autoassinada. Com isso, torna-se possível implementar logout efetivo, revogação antecipada e controle sobre o ciclo de vida da sessão.
+
+**Impacto:** a autenticação deixa de ser totalmente stateless, mas ganha revogação, rastreabilidade e maior controle de sessão.
+
+#### 3️⃣ Rotação de refresh token
+
+**Decisão:** emitir um novo refresh token sempre que a sessão for renovada.
+
+**Motivação:** um refresh token reutilizável é mais perigoso porque, se comprometido, pode ser usado repetidamente para gerar novos access tokens até expirar. Com rotação, cada renovação substitui o token anterior e reduz a utilidade prática de um token vazado.
+
+**Impacto:** aumenta a segurança do fluxo de renovação e permite rejeitar tentativas de reuso.
+
+#### 4️⃣ Invalidação do token anterior
+
+**Decisão:** invalidar o refresh token anterior assim que um novo for emitido.
+
+**Motivação:** isso garante que apenas a credencial mais recente possa renovar a sessão. Sem essa invalidação, tokens antigos continuariam válidos em paralelo, o que enfraquece a rotação e amplia a superfície de abuso.
+
+**Impacto:** a rotação passa a ter valor real como mecanismo de contenção, reduzindo o conjunto de credenciais válidas.
+
+#### 5️⃣ Uso de cookies para aplicações web
+
+**Decisão:** armazenar os tokens em cookies `HttpOnly` no contexto web.
+
+**Motivação:** cookies `HttpOnly` reduzem a exposição dos tokens a scripts executados no navegador, mitigando o impacto de XSS em comparação com storages acessíveis por JavaScript. Em conjunto com `Secure` e `SameSite`, também fortalecem o transporte dessas credenciais no browser.
+
+**Impacto:** a aplicação ganha uma estratégia mais segura de armazenamento no cliente web, embora exija configuração cuidadosa dos cookies.
+
+#### 6️⃣ Uso de `401` em falhas de autenticação
+
+**Decisão:** retornar `401 Unauthorized` quando a requisição não apresentar credenciais válidas.
+
+**Motivação:** esse status sinaliza que o token está ausente, expirado, inválido ou revogado, permitindo que o cliente tente renovar a sessão por meio do refresh token. Se a renovação também falhar, o fluxo deve redirecionar o usuário para autenticação novamente.
+
+**Impacto:** o cliente consegue distinguir falhas de autenticação de falhas de autorização. Assim, `401` indica necessidade de reautenticação, enquanto `403` fica reservado para casos em que o usuário está autenticado, mas não possui permissão para acessar o recurso solicitado.
