@@ -9,6 +9,7 @@ import {
   Body,
   Controller,
   DefaultValuePipe,
+  Delete,
   Get,
   Inject,
   Param,
@@ -143,5 +144,35 @@ export class UsersController {
     @CurrentUser() user: AuthUser,
   ) {
     return await this.usersService.update(user, id, data);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Delete(':id')
+  @ApiOperation({
+    summary: 'Delete user by id',
+    description:
+      'Sets the user as inactive for the user identified by the provided id.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    example: '2d4d9b58-0d89-4f6a-b7f6-3f6ef1f26f1d',
+    description: 'User identifier.',
+  })
+  @ApiOkResponse({
+    description: 'User deleted successfully.',
+    type: UserEntity,
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden.',
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized.',
+  })
+  async delete(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return await this.usersService.delete(user, id);
   }
 }

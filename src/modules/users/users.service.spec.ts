@@ -18,6 +18,7 @@ describe('UsersService', () => {
     findAll: jest.fn(),
     find: jest.fn(),
     update: jest.fn(),
+    delete: jest.fn(),
     userIsActive: jest.fn(),
   };
 
@@ -277,6 +278,96 @@ describe('UsersService', () => {
       expect(mockUserRepository.update).toHaveBeenCalledWith(
         activeRegularUser.userId,
         data,
+      );
+    });
+  });
+
+  describe('delete', () => {
+    it('should allow admin to delete any user without checking active status', async () => {
+      const targetUserId = 'user-id-1';
+      const user = {
+        id: targetUserId,
+        email: 'admin@email.com',
+        username: 'admin',
+        role: Role.ADMIN,
+        isActive: false,
+        createdAt: new Date('2026-03-01T10:00:00.000Z'),
+        updatedAt: new Date('2026-03-02T10:00:00.000Z'),
+      };
+
+      mockUserRepository.delete.mockResolvedValue(user);
+
+      await expect(service.delete(adminUser, targetUserId)).resolves.toEqual(
+        user,
+      );
+
+      expect(mockUserRepository.userIsActive).not.toHaveBeenCalled();
+      expect(mockUserRepository.delete).toHaveBeenCalledTimes(1);
+      expect(mockUserRepository.delete).toHaveBeenCalledWith(targetUserId);
+    });
+
+    it('should allow active user to delete their own resource', async () => {
+      const user = {
+        id: activeRegularUser.userId,
+        email: 'user@email.com',
+        username: 'user',
+        role: Role.USER,
+        isActive: false,
+        createdAt: new Date('2026-03-01T10:00:00.000Z'),
+        updatedAt: new Date('2026-03-02T10:00:00.000Z'),
+      };
+
+      mockUserRepository.userIsActive.mockResolvedValue(true);
+      mockUserRepository.delete.mockResolvedValue(user);
+
+      await expect(
+        service.delete(activeRegularUser, activeRegularUser.userId),
+      ).resolves.toEqual(user);
+
+      expect(mockUserRepository.userIsActive).toHaveBeenCalledTimes(1);
+      expect(mockUserRepository.userIsActive).toHaveBeenCalledWith(
+        activeRegularUser.userId,
+      );
+      expect(mockUserRepository.delete).toHaveBeenCalledTimes(1);
+      expect(mockUserRepository.delete).toHaveBeenCalledWith(
+        activeRegularUser.userId,
+      );
+    });
+
+    it('should throw forbidden when regular user tries to delete another user resource', async () => {
+      await expect(
+        service.delete(activeRegularUser, 'another-user-id'),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+
+      expect(mockUserRepository.userIsActive).not.toHaveBeenCalled();
+      expect(mockUserRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should throw forbidden when authenticated user is inactive', async () => {
+      mockUserRepository.userIsActive.mockResolvedValue(false);
+
+      await expect(
+        service.delete(activeRegularUser, activeRegularUser.userId),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+
+      expect(mockUserRepository.userIsActive).toHaveBeenCalledTimes(1);
+      expect(mockUserRepository.userIsActive).toHaveBeenCalledWith(
+        activeRegularUser.userId,
+      );
+      expect(mockUserRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should throw not found when repository does not delete a user', async () => {
+      mockUserRepository.userIsActive.mockResolvedValue(true);
+      mockUserRepository.delete.mockResolvedValue(null);
+
+      await expect(
+        service.delete(activeRegularUser, activeRegularUser.userId),
+      ).rejects.toBeInstanceOf(NotFoundException);
+
+      expect(mockUserRepository.delete).toHaveBeenCalledTimes(1);
+      expect(mockUserRepository.delete).toHaveBeenCalledWith(
+        activeRegularUser.userId,
       );
     });
   });

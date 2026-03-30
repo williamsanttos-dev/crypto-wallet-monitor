@@ -62,6 +62,17 @@ export class UsersService implements IUsersService {
     }
   }
 
+  async delete(authUser: AuthUser, targetUserId: string): Promise<UserEntity> {
+    this.validateAccessScope(authUser, targetUserId);
+    await this.ensureAuthenticatedUserCanOperate(authUser);
+
+    const user = await this.repository.delete(targetUserId);
+
+    if (!user) throw new NotFoundException('USER_NOT_FOUND');
+
+    return user;
+  }
+
   private validateAccessScope(authUser: AuthUser, targetUserId: string): void {
     const isAdmin = authUser.role === Role.ADMIN;
     const isSameUser = authUser.userId === targetUserId;
