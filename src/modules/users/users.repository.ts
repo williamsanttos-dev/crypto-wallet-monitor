@@ -4,6 +4,11 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import type { IUserRepository } from './interfaces/user.repository.interface';
 import { UserEntity } from './entities/user.entity';
 import { toRole } from 'src/helpers/to-role';
+import { UpdateUserDto } from './dto/update-user.dto';
+
+type PrismaErrorWithCode = {
+  code?: string;
+};
 
 @Injectable()
 export class PrismaUserRepository implements IUserRepository {
@@ -51,5 +56,35 @@ export class PrismaUserRepository implements IUserRepository {
       ...user,
       role: toRole(user.role),
     };
+  }
+
+  async update(id: string, data: UpdateUserDto): Promise<UserEntity | null> {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id },
+        data: {
+          username: data.username,
+        },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      return {
+        ...user,
+        role: toRole(user.role),
+      };
+    } catch (error) {
+      if ((error as PrismaErrorWithCode).code === 'P2025') {
+        return null;
+      }
+
+      throw error;
+    }
   }
 }

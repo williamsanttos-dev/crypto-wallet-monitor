@@ -1,21 +1,25 @@
 /* eslint-disable nestjs-security/require-guards */
+/* eslint-disable secure-coding/no-hardcoded-credentials */
 
 // False positive:
 // Auth is enforced globally via APP_GUARD.
 // Routes are private by default, and only endpoints explicitly marked with @Public() bypass authentication.
 
 import {
+  Body,
   Controller,
   DefaultValuePipe,
   ForbiddenException,
   Get,
   Inject,
   Param,
+  Patch,
   ParseIntPipe,
   Query,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import {
+  ApiConflictResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -31,6 +35,7 @@ import { Roles } from 'src/security/decorators/roles.decorator';
 import { Role } from 'src/enums/role.enum';
 import { CurrentUser } from 'src/security/decorators/current-user.decorator';
 import type { AuthUser } from 'src/security/strategies/jwt.strategy';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -84,7 +89,7 @@ export class UsersController {
   @ApiParam({
     name: 'id',
     type: String,
-    example: '2d4d9b58-0d89-4f6a-b7f6-3f6ef1f26f1d', // eslint-disable-line secure-coding/no-hardcoded-credentials
+    example: '2d4d9b58-0d89-4f6a-b7f6-3f6ef1f26f1d',
     description: 'User identifier.',
   })
   @ApiOkResponse({
@@ -104,6 +109,45 @@ export class UsersController {
     this.validateUserAccess(user, id);
 
     return await this.usersService.find(id);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Update user by id',
+    description:
+      'Updates the username of the user identified by the provided id.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    example: '2d4d9b58-0d89-4f6a-b7f6-3f6ef1f26f1d',
+    description: 'User identifier.',
+  })
+  @ApiOkResponse({
+    description: 'User updated successfully.',
+    type: UserEntity,
+  })
+  @ApiConflictResponse({
+    description: 'Username already in use.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden.',
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized.',
+  })
+  async update(
+    @Param('id') id: string,
+    @Body() data: UpdateUserDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    this.validateUserAccess(user, id);
+
+    return await this.usersService.update(id, data);
   }
 
   private validateUserAccess(user: AuthUser, id: string): void {
