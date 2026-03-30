@@ -6,6 +6,7 @@ import { IAuthRepository } from './interfaces/auth.repository.interface';
 import { IHashProvider } from './providers/hash.provider.interface';
 import { ITokenProvider } from './providers/token.provider.interface';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Role } from 'src/enums/role.enum';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -118,6 +119,8 @@ describe('AuthService', () => {
       id: 'user-id-1',
       email: loginData.email,
       passwordHash: 'hashed-password',
+      role: Role.USER,
+      isActive: true,
     };
 
     it('should throw BadRequestException if user is not found', async () => {
@@ -166,13 +169,13 @@ describe('AuthService', () => {
 
       expect(mockTokenProvider.sign).toHaveBeenNthCalledWith(
         1,
-        { sub: userFromDb.id },
+        { sub: userFromDb.id, role: userFromDb.role },
         'access',
       );
 
       expect(mockTokenProvider.sign).toHaveBeenNthCalledWith(
         2,
-        { sub: userFromDb.id },
+        { sub: userFromDb.id, role: userFromDb.role },
         'refresh',
       );
 
@@ -226,6 +229,7 @@ describe('AuthService', () => {
     const refreshToken = 'valid-refresh-token';
     const refreshPayload = {
       sub: 'user-id-1',
+      role: Role.USER,
     };
 
     const activeRefreshFromDb = {
@@ -309,13 +313,13 @@ describe('AuthService', () => {
 
       expect(mockTokenProvider.sign).toHaveBeenNthCalledWith(
         1,
-        { sub: refreshPayload.sub },
+        { sub: refreshPayload.sub, role: refreshPayload.role },
         'access',
       );
 
       expect(mockTokenProvider.sign).toHaveBeenNthCalledWith(
         2,
-        { sub: refreshPayload.sub },
+        { sub: refreshPayload.sub, role: refreshPayload.role },
         'refresh',
       );
 
