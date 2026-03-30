@@ -5,4 +5,5 @@ export interface IUserRepository {
   findAll(offset: number, limit: number): Promise<UserEntity[]>;
   find(id: string): Promise<UserEntity | null>;
   update(id: string, data: UpdateUserDto): Promise<UserEntity | null>;
+  userIsActive(id: string): Promise<boolean>;
 }

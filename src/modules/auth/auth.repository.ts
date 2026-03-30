@@ -40,14 +40,21 @@ export class PrismaRepository implements IAuthRepository {
   ): Promise<UserAuth | null> {
     const client = tx ?? this.prisma;
 
-    const user = await client.user.findFirst({
+    const user: {
+      id: string;
+      passwordHash: string;
+      role: string;
+      isActive: boolean;
+    } | null = await client.user.findFirst({
       where: {
         email: email,
+        isActive: true,
       },
       select: {
         id: true,
         passwordHash: true,
         role: true,
+        isActive: true,
       },
     });
 
@@ -57,6 +64,7 @@ export class PrismaRepository implements IAuthRepository {
       id: user.id,
       passwordHash: user.passwordHash,
       role: toRole(user.role),
+      isActive: user.isActive,
     };
   }
 

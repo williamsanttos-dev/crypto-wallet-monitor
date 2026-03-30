@@ -21,6 +21,7 @@ export class PrismaUserRepository implements IUserRepository {
         email: true,
         username: true,
         role: true,
+        isActive: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -45,6 +46,7 @@ export class PrismaUserRepository implements IUserRepository {
         email: true,
         username: true,
         role: true,
+        isActive: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -70,6 +72,7 @@ export class PrismaUserRepository implements IUserRepository {
           email: true,
           username: true,
           role: true,
+          isActive: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -86,5 +89,18 @@ export class PrismaUserRepository implements IUserRepository {
 
       throw error;
     }
+  }
+
+  async userIsActive(id: string): Promise<boolean> {
+    const isActive = await this.prisma.user.findFirst({
+      where: {
+        id,
+        isActive: true,
+      },
+      select: {
+        isActive: true,
+      },
+    });
+    return isActive ? true : false;
   }
 }

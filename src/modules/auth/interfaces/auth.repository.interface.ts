@@ -11,6 +11,7 @@ export type UserAuth = {
   id: string;
   passwordHash: string;
   role: Role;
+  isActive: boolean;
 };
 
 export type TokenNotRevokedPayload = {

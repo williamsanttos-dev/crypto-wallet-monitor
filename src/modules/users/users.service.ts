@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -9,6 +10,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import type { IUserRepository } from './interfaces/user.repository.interface';
 import type { IUsersService } from './interfaces/users.service.interface';
 import { UserEntity } from './entities/user.entity';
+import { Role } from 'src/enums/role.enum';
+import { AuthUser } from 'src/security/strategies/jwt.strategy';
 
 type PrismaErrorWithCode = {
   code?: string;
@@ -25,17 +28,27 @@ export class UsersService implements IUsersService {
     return await this.repository.findAll(offset, limit);
   }
 
-  async find(id: string): Promise<UserEntity> {
-    const user = await this.repository.find(id);
+  async find(authUser: AuthUser, targetUserId: string): Promise<UserEntity> {
+    this.validateAccessScope(authUser, targetUserId);
+    await this.ensureAuthenticatedUserCanOperate(authUser);
+
+    const user = await this.repository.find(targetUserId);
 
     if (!user) throw new NotFoundException('USER_NOT_FOUND');
 
     return user;
   }
 
-  async update(id: string, data: UpdateUserDto): Promise<UserEntity> {
+  async update(
+    authUser: AuthUser,
+    targetUserId: string,
+    data: UpdateUserDto,
+  ): Promise<UserEntity> {
     try {
-      const user = await this.repository.update(id, data);
+      this.validateAccessScope(authUser, targetUserId);
+      await this.ensureAuthenticatedUserCanOperate(authUser);
+
+      const user = await this.repository.update(targetUserId, data);
 
       if (!user) throw new NotFoundException('USER_NOT_FOUND');
 
@@ -46,6 +59,30 @@ export class UsersService implements IUsersService {
       }
 
       throw error;
+    }
+  }
+
+  private validateAccessScope(authUser: AuthUser, targetUserId: string): void {
+    const isAdmin = authUser.role === Role.ADMIN;
+    const isSameUser = authUser.userId === targetUserId;
+
+    if (!isAdmin && !isSameUser) {
+      throw new ForbiddenException('FORBIDDEN_RESOURCE');
+    }
+  }
+  private async ensureAuthenticatedUserCanOperate(
+    authUser: AuthUser,
+  ): Promise<void> {
+    if (authUser.role === Role.ADMIN) {
+      return;
+    }
+
+    const isActive = await this.repository.userIsActive(authUser.userId);
+
+    if (!isActive) {
+      throw new ForbiddenException(
+        'INACTIVE_USERS_CANNOT_ACCESS_THIS_RESOURCE', // eslint-disable-line secure-coding/no-hardcoded-credentials
+      );
     }
   }
 }

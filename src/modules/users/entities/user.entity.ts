@@ -31,6 +31,12 @@ export class UserEntity {
   role!: Role;
 
   @ApiProperty({
+    description: 'Indicates whether the user is active',
+    example: true,
+  })
+  isActive!: boolean;
+
+  @ApiProperty({
     description: 'Date when the user was created',
     example: '2026-03-01T10:00:00.000Z',
   })

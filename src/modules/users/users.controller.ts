@@ -9,7 +9,6 @@ import {
   Body,
   Controller,
   DefaultValuePipe,
-  ForbiddenException,
   Get,
   Inject,
   Param,
@@ -106,9 +105,7 @@ export class UsersController {
     description: 'Unauthorized.',
   })
   async find(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    this.validateUserAccess(user, id);
-
-    return await this.usersService.find(id);
+    return await this.usersService.find(user, id);
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
@@ -145,17 +142,6 @@ export class UsersController {
     @Body() data: UpdateUserDto,
     @CurrentUser() user: AuthUser,
   ) {
-    this.validateUserAccess(user, id);
-
-    return await this.usersService.update(id, data);
-  }
-
-  private validateUserAccess(user: AuthUser, id: string): void {
-    const isAdmin = user.role === Role.ADMIN;
-    const isSameUser = user.userId === id;
-
-    if (!isAdmin && !isSameUser) {
-      throw new ForbiddenException('FORBIDDEN_RESOURCE');
-    }
+    return await this.usersService.update(user, id, data);
   }
 }
