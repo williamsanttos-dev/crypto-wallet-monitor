@@ -73,6 +73,19 @@ export class UsersService implements IUsersService {
     return user;
   }
 
+  async reactivate(
+    authUser: AuthUser,
+    targetUserId: string,
+  ): Promise<UserEntity> {
+    this.ensureAdminAccess(authUser);
+
+    const user = await this.repository.reactivate(targetUserId);
+
+    if (!user) throw new NotFoundException('USER_NOT_FOUND');
+
+    return user;
+  }
+
   private validateAccessScope(authUser: AuthUser, targetUserId: string): void {
     const isAdmin = authUser.role === Role.ADMIN;
     const isSameUser = authUser.userId === targetUserId;
@@ -81,6 +94,13 @@ export class UsersService implements IUsersService {
       throw new ForbiddenException('FORBIDDEN_RESOURCE');
     }
   }
+
+  private ensureAdminAccess(authUser: AuthUser): void {
+    if (authUser.role !== Role.ADMIN) {
+      throw new ForbiddenException('FORBIDDEN_RESOURCE');
+    }
+  }
+
   private async ensureAuthenticatedUserCanOperate(
     authUser: AuthUser,
   ): Promise<void> {

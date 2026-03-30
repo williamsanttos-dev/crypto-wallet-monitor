@@ -11,4 +11,5 @@ export interface IUsersService {
     data: UpdateUserDto,
   ): Promise<UserEntity>;
   delete(authUser: AuthUser, targetUserId: string): Promise<UserEntity>;
+  reactivate(authUser: AuthUser, targetUserId: string): Promise<UserEntity>;
 }

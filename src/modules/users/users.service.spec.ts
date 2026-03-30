@@ -19,6 +19,7 @@ describe('UsersService', () => {
     find: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+    reactivate: jest.fn(),
     userIsActive: jest.fn(),
   };
 
@@ -369,6 +370,53 @@ describe('UsersService', () => {
       expect(mockUserRepository.delete).toHaveBeenCalledWith(
         activeRegularUser.userId,
       );
+    });
+  });
+
+  describe('reactivate', () => {
+    it('should allow admin to reactivate any user', async () => {
+      const targetUserId = 'user-id-1';
+      const user = {
+        id: targetUserId,
+        email: 'admin@email.com',
+        username: 'admin',
+        role: Role.ADMIN,
+        isActive: true,
+        createdAt: new Date('2026-03-01T10:00:00.000Z'),
+        updatedAt: new Date('2026-03-02T10:00:00.000Z'),
+      };
+
+      mockUserRepository.reactivate.mockResolvedValue(user);
+
+      await expect(
+        service.reactivate(adminUser, targetUserId),
+      ).resolves.toEqual(user);
+
+      expect(mockUserRepository.userIsActive).not.toHaveBeenCalled();
+      expect(mockUserRepository.reactivate).toHaveBeenCalledTimes(1);
+      expect(mockUserRepository.reactivate).toHaveBeenCalledWith(targetUserId);
+    });
+
+    it('should throw forbidden when regular user tries to reactivate a user', async () => {
+      await expect(
+        service.reactivate(activeRegularUser, activeRegularUser.userId),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+
+      expect(mockUserRepository.userIsActive).not.toHaveBeenCalled();
+      expect(mockUserRepository.reactivate).not.toHaveBeenCalled();
+    });
+
+    it('should throw not found when repository does not reactivate a user', async () => {
+      const targetUserId = 'missing-user-id';
+
+      mockUserRepository.reactivate.mockResolvedValue(null);
+
+      await expect(
+        service.reactivate(adminUser, targetUserId),
+      ).rejects.toBeInstanceOf(NotFoundException);
+
+      expect(mockUserRepository.reactivate).toHaveBeenCalledTimes(1);
+      expect(mockUserRepository.reactivate).toHaveBeenCalledWith(targetUserId);
     });
   });
 });

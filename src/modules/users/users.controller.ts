@@ -82,6 +82,7 @@ export class UsersController {
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Get(':id')
+  @Roles(Role.ADMIN, Role.USER)
   @ApiOperation({
     summary: 'Find user by id',
     description: 'Returns the first user found for the provided id.',
@@ -111,6 +112,7 @@ export class UsersController {
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Patch(':id')
+  @Roles(Role.ADMIN, Role.USER)
   @ApiOperation({
     summary: 'Update user by id',
     description:
@@ -148,6 +150,7 @@ export class UsersController {
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Delete(':id')
+  @Roles(Role.ADMIN, Role.USER)
   @ApiOperation({
     summary: 'Delete user by id',
     description:
@@ -174,5 +177,36 @@ export class UsersController {
   })
   async delete(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     return await this.usersService.delete(user, id);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Patch(':id/reactivate')
+  @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: 'Reactivate user by id',
+    description:
+      'Sets the user as active for the user identified by the provided id.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    example: '2d4d9b58-0d89-4f6a-b7f6-3f6ef1f26f1d',
+    description: 'User identifier.',
+  })
+  @ApiOkResponse({
+    description: 'User reactivated successfully.',
+    type: UserEntity,
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden.',
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized.',
+  })
+  async reactivate(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return await this.usersService.reactivate(user, id);
   }
 }

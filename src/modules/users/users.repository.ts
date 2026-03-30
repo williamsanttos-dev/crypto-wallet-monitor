@@ -122,6 +122,37 @@ export class PrismaUserRepository implements IUserRepository {
     }
   }
 
+  async reactivate(id: string): Promise<UserEntity | null> {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id },
+        data: {
+          isActive: true,
+        },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          role: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      return {
+        ...user,
+        role: toRole(user.role),
+      };
+    } catch (error) {
+      if ((error as PrismaErrorWithCode).code === 'P2025') {
+        return null;
+      }
+
+      throw error;
+    }
+  }
+
   async userIsActive(id: string): Promise<boolean> {
     const isActive = await this.prisma.user.findFirst({
       where: {
