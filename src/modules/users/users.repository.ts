@@ -31,4 +31,25 @@ export class PrismaUserRepository implements IUserRepository {
       role: toRole(user.role),
     }));
   }
+
+  async find(id: string): Promise<UserEntity | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!user) return null;
+
+    return {
+      ...user,
+      role: toRole(user.role),
+    };
+  }
 }
