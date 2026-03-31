@@ -25,6 +25,16 @@ export class WalletsService implements IWalletsService {
     private readonly repository: IWalletRepository,
   ) {}
 
+  async findAll(
+    authUser: AuthUser,
+    offset: number,
+    limit: number,
+  ): Promise<WalletEntity[]> {
+    await this.ensureAuthenticatedUserCanOperate(authUser);
+
+    return await this.repository.findAll(authUser.userId, offset, limit);
+  }
+
   async create(
     authUser: AuthUser,
     data: CreateWalletDto,

@@ -9,6 +9,30 @@ import { CreateWalletDto } from './dto/create-wallet.dto';
 export class PrismaWalletRepository implements IWalletRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async findAll(
+    userId: string,
+    offset: number,
+    limit: number,
+  ): Promise<WalletEntity[]> {
+    return await this.prisma.wallet.findMany({
+      where: {
+        userId,
+        isActive: true,
+      },
+      skip: offset,
+      take: limit,
+      select: {
+        id: true,
+        userId: true,
+        address: true,
+        label: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
   async create(userId: string, data: CreateWalletDto): Promise<WalletEntity> {
     return await this.prisma.wallet.create({
       data: {

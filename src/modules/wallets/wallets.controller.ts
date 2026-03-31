@@ -8,13 +8,24 @@
 // Auth is enforced globally via APP_GUARD.
 // Routes are private by default, and only endpoints explicitly marked with @Public() bypass authentication.
 
-import { Body, Controller, Inject, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Get,
+  Inject,
+  ParseIntPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import {
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -34,6 +45,47 @@ export class WalletsController {
     @Inject('WalletsService')
     private readonly walletsService: IWalletsService,
   ) {}
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Get()
+  @Roles(Role.USER)
+  @ApiOperation({
+    summary: 'List wallets',
+    description:
+      'Returns a paginated list of active wallets linked to the currently authenticated user.',
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: Number,
+    example: 0,
+    description: 'Number of wallets to skip before starting the result set.',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    example: 20,
+    description: 'Maximum number of wallets returned in the response.',
+  })
+  @ApiOkResponse({
+    description: 'Wallets returned successfully.',
+    type: WalletEntity,
+    isArray: true,
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized.',
+  })
+  async findAll(
+    @CurrentUser() user: AuthUser,
+    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return await this.walletsService.findAll(user, offset, limit);
+  }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post()
