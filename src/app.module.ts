@@ -8,6 +8,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthGuard } from './security/guards/auth.guard';
 import { RolesGuard } from './security/guards/roles.guard';
+import { WalletsModule } from './modules/wallets/wallets.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { RolesGuard } from './security/guards/roles.guard';
       ],
     }),
     ConfigModule.forRoot(),
+    WalletsModule,
   ],
   controllers: [],
   providers: [
