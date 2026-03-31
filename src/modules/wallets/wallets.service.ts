@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 
 import type { IWalletRepository } from './interfaces/wallet.repository.interface';
@@ -33,6 +34,18 @@ export class WalletsService implements IWalletsService {
     await this.ensureAuthenticatedUserCanOperate(authUser);
 
     return await this.repository.findAll(authUser.userId, offset, limit);
+  }
+
+  async find(authUser: AuthUser, id: string): Promise<WalletEntity> {
+    await this.ensureAuthenticatedUserCanOperate(authUser);
+
+    const wallet = await this.repository.find(authUser.userId, id);
+
+    if (!wallet) {
+      throw new NotFoundException('WALLET_NOT_FOUND');
+    }
+
+    return wallet;
   }
 
   async create(

@@ -14,6 +14,7 @@ import {
   DefaultValuePipe,
   Get,
   Inject,
+  Param,
   ParseIntPipe,
   Post,
   Query,
@@ -23,8 +24,10 @@ import {
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -85,6 +88,37 @@ export class WalletsController {
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
     return await this.walletsService.findAll(user, offset, limit);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Get(':id')
+  @Roles(Role.USER)
+  @ApiOperation({
+    summary: 'Find wallet by id',
+    description:
+      'Returns the active wallet linked to the currently authenticated user for the provided id.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    example: 'd9e0d1f5-6306-4eb6-a3b2-0f26adf81e11', // eslint-disable-line secure-coding/no-hardcoded-credentials
+    description: 'Wallet identifier.',
+  })
+  @ApiOkResponse({
+    description: 'Wallet returned successfully.',
+    type: WalletEntity,
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden.',
+  })
+  @ApiNotFoundResponse({
+    description: 'Wallet not found.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized.',
+  })
+  async find(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return await this.walletsService.find(user, id);
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })

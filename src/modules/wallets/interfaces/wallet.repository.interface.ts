@@ -7,6 +7,7 @@ export interface IWalletRepository {
     offset: number,
     limit: number,
   ): Promise<WalletEntity[]>;
+  find(userId: string, id: string): Promise<WalletEntity | null>;
   create(userId: string, data: CreateWalletDto): Promise<WalletEntity>;
   userIsActive(id: string): Promise<boolean>;
 }

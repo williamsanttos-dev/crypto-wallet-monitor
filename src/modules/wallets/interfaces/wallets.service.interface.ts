@@ -8,5 +8,6 @@ export interface IWalletsService {
     offset: number,
     limit: number,
   ): Promise<WalletEntity[]>;
+  find(authUser: AuthUser, id: string): Promise<WalletEntity>;
   create(authUser: AuthUser, data: CreateWalletDto): Promise<WalletEntity>;
 }
