@@ -9,5 +9,6 @@ export interface IWalletsService {
     limit: number,
   ): Promise<WalletEntity[]>;
   find(authUser: AuthUser, id: string): Promise<WalletEntity>;
+  delete(authUser: AuthUser, id: string): Promise<WalletEntity>;
   create(authUser: AuthUser, data: CreateWalletDto): Promise<WalletEntity>;
 }

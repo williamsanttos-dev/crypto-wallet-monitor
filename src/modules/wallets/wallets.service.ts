@@ -48,6 +48,18 @@ export class WalletsService implements IWalletsService {
     return wallet;
   }
 
+  async delete(authUser: AuthUser, id: string): Promise<WalletEntity> {
+    await this.ensureAuthenticatedUserCanOperate(authUser);
+
+    const wallet = await this.repository.delete(authUser.userId, id);
+
+    if (!wallet) {
+      throw new NotFoundException('WALLET_NOT_FOUND');
+    }
+
+    return wallet;
+  }
+
   async create(
     authUser: AuthUser,
     data: CreateWalletDto,

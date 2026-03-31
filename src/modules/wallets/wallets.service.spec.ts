@@ -17,6 +17,7 @@ describe('WalletsService', () => {
   const mockWalletRepository: jest.Mocked<IWalletRepository> = {
     findAll: jest.fn(),
     find: jest.fn(),
+    delete: jest.fn(),
     create: jest.fn(),
     userIsActive: jest.fn(),
   };
@@ -180,6 +181,82 @@ describe('WalletsService', () => {
       );
       expect(mockWalletRepository.find).toHaveBeenCalledTimes(1);
       expect(mockWalletRepository.find).toHaveBeenCalledWith(
+        activeRegularUser.userId,
+        walletId,
+      );
+    });
+  });
+
+  describe('delete', () => {
+    it('should soft delete an active wallet from authenticated active user', async () => {
+      const walletId = 'wallet-id-1';
+      const wallet = {
+        id: walletId,
+        userId: activeRegularUser.userId,
+        address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+        label: 'Main wallet',
+        isActive: false,
+        createdAt: new Date('2026-03-01T10:00:00.000Z'),
+        updatedAt: new Date('2026-03-03T10:00:00.000Z'),
+      };
+
+      mockWalletRepository.userIsActive.mockResolvedValue(true);
+      mockWalletRepository.delete.mockResolvedValue(wallet);
+
+      await expect(
+        service.delete(activeRegularUser, walletId),
+      ).resolves.toEqual(wallet);
+
+      expect(mockWalletRepository.userIsActive).toHaveBeenCalledTimes(1);
+      expect(mockWalletRepository.userIsActive).toHaveBeenCalledWith(
+        activeRegularUser.userId,
+      );
+      expect(mockWalletRepository.delete).toHaveBeenCalledTimes(1);
+      expect(mockWalletRepository.delete).toHaveBeenCalledWith(
+        activeRegularUser.userId,
+        walletId,
+      );
+    });
+
+    it('should throw forbidden when authenticated user is inactive', async () => {
+      mockWalletRepository.userIsActive.mockResolvedValue(false);
+
+      await expect(
+        service.delete(activeRegularUser, 'wallet-id-1'),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+
+      expect(mockWalletRepository.userIsActive).toHaveBeenCalledTimes(1);
+      expect(mockWalletRepository.userIsActive).toHaveBeenCalledWith(
+        activeRegularUser.userId,
+      );
+      expect(mockWalletRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should throw forbidden when authenticated user is not a regular user', async () => {
+      await expect(
+        service.delete(adminUser, 'wallet-id-1'),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+
+      expect(mockWalletRepository.userIsActive).not.toHaveBeenCalled();
+      expect(mockWalletRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should throw not found when repository does not return a wallet', async () => {
+      const walletId = 'wallet-id-1';
+
+      mockWalletRepository.userIsActive.mockResolvedValue(true);
+      mockWalletRepository.delete.mockResolvedValue(null);
+
+      await expect(
+        service.delete(activeRegularUser, walletId),
+      ).rejects.toBeInstanceOf(NotFoundException);
+
+      expect(mockWalletRepository.userIsActive).toHaveBeenCalledTimes(1);
+      expect(mockWalletRepository.userIsActive).toHaveBeenCalledWith(
+        activeRegularUser.userId,
+      );
+      expect(mockWalletRepository.delete).toHaveBeenCalledTimes(1);
+      expect(mockWalletRepository.delete).toHaveBeenCalledWith(
         activeRegularUser.userId,
         walletId,
       );

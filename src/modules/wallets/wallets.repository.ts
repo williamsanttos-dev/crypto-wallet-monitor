@@ -52,6 +52,28 @@ export class PrismaWalletRepository implements IWalletRepository {
     });
   }
 
+  async delete(userId: string, id: string): Promise<WalletEntity | null> {
+    return await this.prisma.wallet.update({
+      where: {
+        id,
+        userId,
+        isActive: true,
+      },
+      data: {
+        isActive: false,
+      },
+      select: {
+        id: true,
+        userId: true,
+        address: true,
+        label: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
   async create(userId: string, data: CreateWalletDto): Promise<WalletEntity> {
     return await this.prisma.wallet.create({
       data: {

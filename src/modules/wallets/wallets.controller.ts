@@ -1,4 +1,5 @@
 /* eslint-disable nestjs-security/require-guards */
+/* eslint-disable secure-coding/no-hardcoded-credentials */
 /* eslint-disable nestjs-security/no-missing-validation-pipe */
 
 // ValidationPipe exist in main.ts
@@ -12,6 +13,7 @@ import {
   Body,
   Controller,
   DefaultValuePipe,
+  Delete,
   Get,
   Inject,
   Param,
@@ -101,7 +103,7 @@ export class WalletsController {
   @ApiParam({
     name: 'id',
     type: String,
-    example: 'd9e0d1f5-6306-4eb6-a3b2-0f26adf81e11', // eslint-disable-line secure-coding/no-hardcoded-credentials
+    example: 'd9e0d1f5-6306-4eb6-a3b2-0f26adf81e11',
     description: 'Wallet identifier.',
   })
   @ApiOkResponse({
@@ -119,6 +121,37 @@ export class WalletsController {
   })
   async find(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     return await this.walletsService.find(user, id);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Delete(':id')
+  @Roles(Role.USER)
+  @ApiOperation({
+    summary: 'Delete wallet by id',
+    description:
+      'Soft deletes the active wallet linked to the currently authenticated user for the provided id.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    example: 'd9e0d1f5-6306-4eb6-a3b2-0f26adf81e11',
+    description: 'Wallet identifier.',
+  })
+  @ApiOkResponse({
+    description: 'Wallet deleted successfully.',
+    type: WalletEntity,
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden.',
+  })
+  @ApiNotFoundResponse({
+    description: 'Wallet not found.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized.',
+  })
+  async delete(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return await this.walletsService.delete(user, id);
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
