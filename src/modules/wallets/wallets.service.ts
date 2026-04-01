@@ -11,6 +11,7 @@ import type { IWalletRepository } from './interfaces/wallet.repository.interface
 import type { IWalletsService } from './interfaces/wallets.service.interface';
 import { WalletEntity } from './entities/wallet.entity';
 import { CreateWalletDto } from './dto/create-wallet.dto';
+import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { AuthUser } from 'src/security/strategies/jwt.strategy';
 import { Role } from 'src/enums/role.enum';
 
@@ -61,6 +62,22 @@ export class WalletsService implements IWalletsService {
   ): Promise<WalletEntity> {
     await this.ensureAuthenticatedUserCanOperate(authUser);
     return await this.repository.create(authUser.userId, data);
+  }
+
+  async update(
+    authUser: AuthUser,
+    id: string,
+    data: UpdateWalletDto,
+  ): Promise<WalletEntity> {
+    await this.ensureAuthenticatedUserCanOperate(authUser);
+
+    const wallet = await this.repository.update(authUser.userId, id, data);
+
+    if (!wallet) {
+      throw new NotFoundException('WALLET_NOT_FOUND');
+    }
+
+    return wallet;
   }
 
   private async ensureAuthenticatedUserCanOperate(

@@ -17,6 +17,7 @@ import {
   Get,
   Inject,
   Param,
+  Patch,
   ParseIntPipe,
   Post,
   Query,
@@ -42,6 +43,7 @@ import { Roles } from 'src/security/decorators/roles.decorator';
 import { Role } from 'src/enums/role.enum';
 import { CurrentUser } from 'src/security/decorators/current-user.decorator';
 import type { AuthUser } from 'src/security/strategies/jwt.strategy';
+import { UpdateWalletDto } from './dto/update-wallet.dto';
 
 @ApiTags('wallets')
 @Controller('wallets')
@@ -179,5 +181,40 @@ export class WalletsController {
     @CurrentUser() user: AuthUser,
   ) {
     return await this.walletsService.create(user, createWalletDto);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Patch(':id')
+  @Roles(Role.USER)
+  @ApiOperation({
+    summary: 'Update wallet by id',
+    description:
+      'Updates only the label of the active wallet linked to the currently authenticated user for the provided id.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    example: 'd9e0d1f5-6306-4eb6-a3b2-0f26adf81e11',
+    description: 'Wallet identifier.',
+  })
+  @ApiOkResponse({
+    description: 'Wallet updated successfully.',
+    type: WalletEntity,
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden.',
+  })
+  @ApiNotFoundResponse({
+    description: 'Wallet not found.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized.',
+  })
+  async update(
+    @Param('id') id: string,
+    @Body() updateWalletDto: UpdateWalletDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return await this.walletsService.update(user, id, updateWalletDto);
   }
 }

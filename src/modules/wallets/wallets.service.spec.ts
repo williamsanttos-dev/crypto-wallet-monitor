@@ -10,6 +10,7 @@ import { IWalletRepository } from './interfaces/wallet.repository.interface';
 import { AuthUser } from 'src/security/strategies/jwt.strategy';
 import { Role } from 'src/enums/role.enum';
 import { CreateWalletDto } from './dto/create-wallet.dto';
+import { UpdateWalletDto } from './dto/update-wallet.dto';
 
 describe('WalletsService', () => {
   let service: WalletsService;
@@ -19,6 +20,7 @@ describe('WalletsService', () => {
     find: jest.fn(),
     delete: jest.fn(),
     create: jest.fn(),
+    update: jest.fn(),
     userIsActive: jest.fn(),
   };
 
@@ -338,6 +340,86 @@ describe('WalletsService', () => {
       expect(mockWalletRepository.create).toHaveBeenCalledTimes(1);
       expect(mockWalletRepository.create).toHaveBeenCalledWith(
         activeRegularUser.userId,
+        data,
+      );
+    });
+  });
+
+  describe('update', () => {
+    const walletId = 'wallet-id-1';
+    const data: UpdateWalletDto = {
+      label: 'Trading wallet',
+    };
+
+    it('should update wallet label for active regular user', async () => {
+      const wallet = {
+        id: walletId,
+        userId: activeRegularUser.userId,
+        address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+        label: data.label,
+        isActive: true,
+        createdAt: new Date('2026-03-01T10:00:00.000Z'),
+        updatedAt: new Date('2026-03-04T10:00:00.000Z'),
+      };
+
+      mockWalletRepository.userIsActive.mockResolvedValue(true);
+      mockWalletRepository.update.mockResolvedValue(wallet);
+
+      await expect(
+        service.update(activeRegularUser, walletId, data),
+      ).resolves.toEqual(wallet);
+
+      expect(mockWalletRepository.userIsActive).toHaveBeenCalledTimes(1);
+      expect(mockWalletRepository.userIsActive).toHaveBeenCalledWith(
+        activeRegularUser.userId,
+      );
+      expect(mockWalletRepository.update).toHaveBeenCalledTimes(1);
+      expect(mockWalletRepository.update).toHaveBeenCalledWith(
+        activeRegularUser.userId,
+        walletId,
+        data,
+      );
+    });
+
+    it('should throw forbidden when authenticated user is inactive', async () => {
+      mockWalletRepository.userIsActive.mockResolvedValue(false);
+
+      await expect(
+        service.update(activeRegularUser, walletId, data),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+
+      expect(mockWalletRepository.userIsActive).toHaveBeenCalledTimes(1);
+      expect(mockWalletRepository.userIsActive).toHaveBeenCalledWith(
+        activeRegularUser.userId,
+      );
+      expect(mockWalletRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw forbidden when authenticated user is not a regular user', async () => {
+      await expect(
+        service.update(adminUser, walletId, data),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+
+      expect(mockWalletRepository.userIsActive).not.toHaveBeenCalled();
+      expect(mockWalletRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw not found when repository does not return a wallet', async () => {
+      mockWalletRepository.userIsActive.mockResolvedValue(true);
+      mockWalletRepository.update.mockResolvedValue(null);
+
+      await expect(
+        service.update(activeRegularUser, walletId, data),
+      ).rejects.toBeInstanceOf(NotFoundException);
+
+      expect(mockWalletRepository.userIsActive).toHaveBeenCalledTimes(1);
+      expect(mockWalletRepository.userIsActive).toHaveBeenCalledWith(
+        activeRegularUser.userId,
+      );
+      expect(mockWalletRepository.update).toHaveBeenCalledTimes(1);
+      expect(mockWalletRepository.update).toHaveBeenCalledWith(
+        activeRegularUser.userId,
+        walletId,
         data,
       );
     });

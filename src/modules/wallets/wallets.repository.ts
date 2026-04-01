@@ -4,6 +4,11 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import type { IWalletRepository } from './interfaces/wallet.repository.interface';
 import type { WalletEntity } from './entities/wallet.entity';
 import { CreateWalletDto } from './dto/create-wallet.dto';
+import { UpdateWalletDto } from './dto/update-wallet.dto';
+
+type PrismaErrorWithCode = {
+  code?: string;
+};
 
 @Injectable()
 export class PrismaWalletRepository implements IWalletRepository {
@@ -132,6 +137,40 @@ export class PrismaWalletRepository implements IWalletRepository {
         },
       });
     });
+  }
+
+  async update(
+    userId: string,
+    id: string,
+    data: UpdateWalletDto,
+  ): Promise<WalletEntity | null> {
+    try {
+      return await this.prisma.wallet.update({
+        where: {
+          id,
+          userId,
+          isActive: true,
+        },
+        data: {
+          label: data.label,
+        },
+        select: {
+          id: true,
+          userId: true,
+          address: true,
+          label: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+    } catch (error) {
+      if ((error as PrismaErrorWithCode).code === 'P2025') {
+        return null;
+      }
+
+      throw error;
+    }
   }
 
   async userIsActive(id: string): Promise<boolean> {
