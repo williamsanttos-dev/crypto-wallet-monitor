@@ -1,4 +1,5 @@
 /* eslint-disable nestjs-security/require-guards */
+/* eslint-disable secure-coding/no-hardcoded-credentials */
 /* eslint-disable nestjs-security/no-missing-validation-pipe */
 
 // ValidationPipe exist in main.ts
@@ -12,8 +13,11 @@ import {
   Body,
   Controller,
   DefaultValuePipe,
+  Delete,
   Get,
   Inject,
+  Param,
+  Patch,
   ParseIntPipe,
   Post,
   Query,
@@ -23,8 +27,10 @@ import {
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -37,6 +43,7 @@ import { Roles } from 'src/security/decorators/roles.decorator';
 import { Role } from 'src/enums/role.enum';
 import { CurrentUser } from 'src/security/decorators/current-user.decorator';
 import type { AuthUser } from 'src/security/strategies/jwt.strategy';
+import { UpdateWalletDto } from './dto/update-wallet.dto';
 
 @ApiTags('wallets')
 @Controller('wallets')
@@ -88,6 +95,68 @@ export class WalletsController {
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Get(':id')
+  @Roles(Role.USER)
+  @ApiOperation({
+    summary: 'Find wallet by id',
+    description:
+      'Returns the active wallet linked to the currently authenticated user for the provided id.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    example: 'd9e0d1f5-6306-4eb6-a3b2-0f26adf81e11',
+    description: 'Wallet identifier.',
+  })
+  @ApiOkResponse({
+    description: 'Wallet returned successfully.',
+    type: WalletEntity,
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden.',
+  })
+  @ApiNotFoundResponse({
+    description: 'Wallet not found.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized.',
+  })
+  async find(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return await this.walletsService.find(user, id);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Delete(':id')
+  @Roles(Role.USER)
+  @ApiOperation({
+    summary: 'Delete wallet by id',
+    description:
+      'Soft deletes the active wallet linked to the currently authenticated user for the provided id.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    example: 'd9e0d1f5-6306-4eb6-a3b2-0f26adf81e11',
+    description: 'Wallet identifier.',
+  })
+  @ApiOkResponse({
+    description: 'Wallet deleted successfully.',
+    type: WalletEntity,
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden.',
+  })
+  @ApiNotFoundResponse({
+    description: 'Wallet not found.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized.',
+  })
+  async delete(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return await this.walletsService.delete(user, id);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post()
   @Roles(Role.USER)
   @ApiOperation({
@@ -112,5 +181,40 @@ export class WalletsController {
     @CurrentUser() user: AuthUser,
   ) {
     return await this.walletsService.create(user, createWalletDto);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Patch(':id')
+  @Roles(Role.USER)
+  @ApiOperation({
+    summary: 'Update wallet by id',
+    description:
+      'Updates only the label of the active wallet linked to the currently authenticated user for the provided id.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    example: 'd9e0d1f5-6306-4eb6-a3b2-0f26adf81e11',
+    description: 'Wallet identifier.',
+  })
+  @ApiOkResponse({
+    description: 'Wallet updated successfully.',
+    type: WalletEntity,
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden.',
+  })
+  @ApiNotFoundResponse({
+    description: 'Wallet not found.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized.',
+  })
+  async update(
+    @Param('id') id: string,
+    @Body() updateWalletDto: UpdateWalletDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return await this.walletsService.update(user, id, updateWalletDto);
   }
 }

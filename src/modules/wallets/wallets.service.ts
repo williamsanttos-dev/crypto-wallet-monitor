@@ -1,22 +1,19 @@
 /* eslint-disable secure-coding/no-insecure-comparison */
 
 import {
-  ConflictException,
   ForbiddenException,
   Inject,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 
 import type { IWalletRepository } from './interfaces/wallet.repository.interface';
 import type { IWalletsService } from './interfaces/wallets.service.interface';
 import { WalletEntity } from './entities/wallet.entity';
 import { CreateWalletDto } from './dto/create-wallet.dto';
+import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { AuthUser } from 'src/security/strategies/jwt.strategy';
 import { Role } from 'src/enums/role.enum';
-
-type PrismaErrorWithCode = {
-  code?: string;
-};
 
 @Injectable()
 export class WalletsService implements IWalletsService {
@@ -35,20 +32,52 @@ export class WalletsService implements IWalletsService {
     return await this.repository.findAll(authUser.userId, offset, limit);
   }
 
+  async find(authUser: AuthUser, id: string): Promise<WalletEntity> {
+    await this.ensureAuthenticatedUserCanOperate(authUser);
+
+    const wallet = await this.repository.find(authUser.userId, id);
+
+    if (!wallet) {
+      throw new NotFoundException('WALLET_NOT_FOUND');
+    }
+
+    return wallet;
+  }
+
+  async delete(authUser: AuthUser, id: string): Promise<WalletEntity> {
+    await this.ensureAuthenticatedUserCanOperate(authUser);
+
+    const wallet = await this.repository.delete(authUser.userId, id);
+
+    if (!wallet) {
+      throw new NotFoundException('WALLET_NOT_FOUND');
+    }
+
+    return wallet;
+  }
+
   async create(
     authUser: AuthUser,
     data: CreateWalletDto,
   ): Promise<WalletEntity> {
-    try {
-      await this.ensureAuthenticatedUserCanOperate(authUser);
-      return await this.repository.create(authUser.userId, data);
-    } catch (error) {
-      if ((error as PrismaErrorWithCode).code === 'P2002') {
-        throw new ConflictException('wallet address already registered');
-      }
+    await this.ensureAuthenticatedUserCanOperate(authUser);
+    return await this.repository.create(authUser.userId, data);
+  }
 
-      throw error;
+  async update(
+    authUser: AuthUser,
+    id: string,
+    data: UpdateWalletDto,
+  ): Promise<WalletEntity> {
+    await this.ensureAuthenticatedUserCanOperate(authUser);
+
+    const wallet = await this.repository.update(authUser.userId, id, data);
+
+    if (!wallet) {
+      throw new NotFoundException('WALLET_NOT_FOUND');
     }
+
+    return wallet;
   }
 
   private async ensureAuthenticatedUserCanOperate(
