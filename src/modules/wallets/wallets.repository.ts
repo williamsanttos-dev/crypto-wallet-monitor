@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 
 import { PrismaService } from 'src/prisma/prisma.service';
 import type { IWalletRepository } from './interfaces/wallet.repository.interface';
@@ -75,21 +75,62 @@ export class PrismaWalletRepository implements IWalletRepository {
   }
 
   async create(userId: string, data: CreateWalletDto): Promise<WalletEntity> {
-    return await this.prisma.wallet.create({
-      data: {
-        userId,
-        address: data.address,
-        label: data.label,
-      },
-      select: {
-        id: true,
-        userId: true,
-        address: true,
-        label: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    return await this.prisma.$transaction(async (tx) => {
+      const existingWallet = await tx.wallet.findUnique({
+        where: {
+          userId_address: {
+            address: data.address,
+            userId,
+          },
+        },
+        select: {
+          id: true,
+          isActive: true,
+        },
+      });
+
+      if (!existingWallet)
+        return await tx.wallet.create({
+          data: {
+            userId,
+            address: data.address,
+            label: data.label,
+          },
+          select: {
+            id: true,
+            userId: true,
+            address: true,
+            label: true,
+            isActive: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
+
+      if (existingWallet.isActive)
+        throw new ConflictException('WALLET_ALREADY_REGISTERED');
+
+      return tx.wallet.update({
+        where: {
+          userId_address: {
+            userId,
+            address: data.address,
+          },
+        },
+        data: {
+          label: data.label,
+          isActive: true,
+        },
+        select: {
+          id: true,
+          userId: true,
+          address: true,
+          label: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
     });
   }
 

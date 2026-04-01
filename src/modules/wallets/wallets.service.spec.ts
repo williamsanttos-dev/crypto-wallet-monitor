@@ -323,9 +323,9 @@ describe('WalletsService', () => {
 
     it('should throw conflict when repository returns prisma unique constraint error', async () => {
       mockWalletRepository.userIsActive.mockResolvedValue(true);
-      mockWalletRepository.create.mockRejectedValue({
-        code: 'P2002',
-      });
+      mockWalletRepository.create.mockRejectedValue(
+        new ConflictException('WALLET_ALREADY_REGISTERED'),
+      );
 
       await expect(
         service.create(activeRegularUser, data),

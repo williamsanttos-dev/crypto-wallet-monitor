@@ -1,7 +1,6 @@
 /* eslint-disable secure-coding/no-insecure-comparison */
 
 import {
-  ConflictException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -14,10 +13,6 @@ import { WalletEntity } from './entities/wallet.entity';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { AuthUser } from 'src/security/strategies/jwt.strategy';
 import { Role } from 'src/enums/role.enum';
-
-type PrismaErrorWithCode = {
-  code?: string;
-};
 
 @Injectable()
 export class WalletsService implements IWalletsService {
@@ -64,16 +59,8 @@ export class WalletsService implements IWalletsService {
     authUser: AuthUser,
     data: CreateWalletDto,
   ): Promise<WalletEntity> {
-    try {
-      await this.ensureAuthenticatedUserCanOperate(authUser);
-      return await this.repository.create(authUser.userId, data);
-    } catch (error) {
-      if ((error as PrismaErrorWithCode).code === 'P2002') {
-        throw new ConflictException('wallet address already registered');
-      }
-
-      throw error;
-    }
+    await this.ensureAuthenticatedUserCanOperate(authUser);
+    return await this.repository.create(authUser.userId, data);
   }
 
   private async ensureAuthenticatedUserCanOperate(
