@@ -14,6 +14,10 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  USER
+  ADMIN
+}
 model User {
   id String @id @default(uuid())
 
@@ -55,13 +59,19 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
+enum WalletNetwork {
+  ETHEREUM
+}
+
 model Wallet {
   id String @id  @default(uuid())
 
   userId String @map("user_id")
   user User @relation(fields: [userId], references: [id])
 
-  address String 
+  address String @db.VarChar(42)
+
+  network WalletNetwork @default(ETHEREUM)
 
   label String? @db.VarChar(100)
 
@@ -70,11 +80,86 @@ model Wallet {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@unique([userId, address])
+  state WalletState?
+  transactions WalletTransaction[]
+
+  @@unique([userId, address], map: "wallet_user_id_address_key")
+  @@index([userId], map: "wallet_user_id_idx")
+  @@index([address], map: "wallet_address_idx") 
   @@map("wallets")
 }
 
-enum Role {
-  USER
-  ADMIN
+enum WalletSyncStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+model WalletState {
+  id String @id @default(uuid())
+  walletId String @unique @map("wallet_id")
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  currentBalanceWei Decimal @default(0) @map("current_balance_wei") @db.Decimal(78, 0)
+
+  lastBalanceUpdatedAt DateTime? @map("last_balance_updated_at")
+  lastSyncedAt DateTime? @map("last_synced_at")
+  lastSyncedBlockNumber BigInt? @map("last_synced_block_number")
+
+  lastSyncStatus WalletSyncStatus @default(PENDING) @map("last_sync_status")
+  lastSyncError String?  @map("last_sync_error") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([lastSyncStatus], map: "wallet_state_last_sync_status_idx")
+  @@index([lastSyncedBlockNumber], map: "wallet_state_last_synced_block_number_idx")
+  @@map("wallet_states")
+}
+
+enum WalletTransactionDirection {
+  IN
+  OUT
+  SELF
+}
+
+enum WalletTransactionStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+model WalletTransaction {
+  id String @id @default(uuid())
+  walletId String @map("wallet_id")
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  hash String @db.VarChar(66)
+  nonce BigInt?
+  blockNumber BigInt? @map("block_number")
+  blockHash String? @map("block_hash") @db.VarChar(66)
+  transactionIndex Int? @map("transaction_index")
+
+  fromAddress String @map("from_address") @db.VarChar(42)
+  toAddress String? @map("to_address") @db.VarChar(42)
+
+  valueWei Decimal @map("value_wei") @db.Decimal(78, 0)
+  gasPriceWei Decimal? @map("gas_price_wei") @db.Decimal(78, 0)
+  gasUsed Decimal? @map("gas_used") @db.Decimal(78, 0)
+  feeWei Decimal? @map("fee_wei") @db.Decimal(78, 0)
+
+  status WalletTransactionStatus @default(PENDING)
+  direction WalletTransactionDirection
+
+  timestamp DateTime? @map("timestamp")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([walletId, hash], map: "wallet_transaction_wallet_id_hash_key")
+  @@index([walletId, blockNumber], map: "wallet_transaction_wallet_id_block_number_idx")
+  @@index([walletId, timestamp], map: "wallet_transaction_wallet_id_timestamp_idx")
+  @@index([hash], map: "wallet_transaction_hash_idx")
+  @@index([fromAddress], map: "wallet_transaction_from_address_idx")
+  @@index([toAddress], map: "wallet_transaction_to_address_idx")
+  @@map("wallet_transactions")
 }
